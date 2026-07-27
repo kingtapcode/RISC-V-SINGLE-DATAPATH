@@ -16,14 +16,19 @@ Kiến trúc cốt lõi được chia thành 5 giai đoạn (stages) xử lý li
   <em>Hình 1: Sơ đồ nguyên lý Datapath kiến trúc RV64I Single-Cycle</em>
 </p>
 ## 2. Kịch bản Kiểm thử (Testbenches & Verification)
+
 Quá trình kiểm tra tính đúng đắn của Datapath được thực hiện bằng cách nạp mã máy (machine code) biên dịch từ tập lệnh Assembly vào bộ nhớ `IMEM`, sau đó quan sát sự biến đổi của các tín hiệu điều khiển và luồng dữ liệu trên đồ thị sóng (Waveform).
+
 ### 2.1. Test Lệnh Số Học (ADD / SUB)
+
 **Mục tiêu:** Xác minh luồng dữ liệu đi từ tập thanh ghi (`RegFile`) và khối `ImmGen32_64`, xuyên qua khối tính toán (`ALU_64bit`) và ghi ngược kết quả chính xác về lại thanh ghi đích.
+
 **Đoạn mã Assembly được nạp (Minh họa phép tính 5 + 10 = 15):**
 ```assembly
 addi x1, x0, 5      // Cycle 1: x1 = 0 + 5 = 5
 addi x2, x0, 10     // Cycle 2: x2 = 0 + 10 = 10
 add  x3, x1, x2     // Cycle 3: x3 = x1 + x2 = 15
+```
 **Các tín hiệu trọng tâm cần quan sát:**
 * **`clk_i` & `pc_o`:** Xung nhịp hệ thống và Bộ đếm chương trình.
 * **`instr_o`:** Mã lệnh đang được thực thi.
