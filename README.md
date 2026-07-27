@@ -82,7 +82,7 @@ lb   x6, 24(x1)           // Đọc 8-bit (0xFF). Do bit MSB = 1, Load Byte sẽ
 **Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
 
 <p align="center">
-  <img src="images/load_store_waveform.png" width="1000" alt="Waveform test lệnh Load/Store">
+  <img src="Image/store_load_waveform.png" width="1000" alt="Waveform test lệnh Load/Store">
 </p>
 <p align="center">
   <em>Hình 3: Quá trình xử lý mặt nạ bit và mở rộng dấu của khối LSU qua các lệnh Load/Store</em>
