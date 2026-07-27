@@ -157,3 +157,39 @@ addi x5, x0, 99      // pc=0x18: Lệnh này ĐƯỢC THỰC THI (x5 = 99)
 * **Hoàn tất kiểm thử (`pc_o = 0x18`):**
   CPU thực thi thành công lệnh cộng `ADDI` ngay sau đó, xuất ra kết quả `alu_result_o = 0x63` (99 thập phân) và đồng thời bật cờ `reg_write_en_i = 1` để lưu chính xác giá trị này về Register File.
 
+  ### 2.4. Test Lệnh Bước Nhảy Vô Điều Kiện (JAL và JALR)
+
+**Mục tiêu:** Kiểm tra khả năng nhảy cóc của Bộ đếm chương trình (`PC`) và tính năng "Link" (lưu địa chỉ quay về) của hai lệnh nhảy vô điều kiện. 
+* **`JAL` (J-Type):** Nhảy tới địa chỉ tương đối `PC + imm`.
+* **`JALR` (I-Type):** Nhảy tới địa chỉ tuyệt đối `rs1 + imm`.
+* Đặc điểm chung bắt buộc: Cả hai lệnh đều phải ghi giá trị `PC + 4` (địa chỉ của lệnh kế tiếp) vào thanh ghi đích `rd`.
+
+**Đoạn mã Assembly được nạp:**
+```assembly
+// 1. Test lệnh JAL
+jal  x1, 12       // pc=0x0 : Nhảy tới 0x0 + 12 = 0xc. Lưu x1 = 0x4
+addi x0, x0, -1   // pc=0x4 : BẪY (Sẽ bị lướt qua)
+addi x0, x0, -1   // pc=0x8 : BẪY (Sẽ bị lướt qua)
+
+// 2. Chuẩn bị địa chỉ nền cho JALR
+addi x4, x1, 16   // pc=0xc : x4 = 4 + 16 = 20 (0x14)
+
+// 3. Test lệnh JALR
+jalr x5, x4, 8    // pc=0x10: Nhảy tới x4 + 8 = 0x14 + 8 = 0x1c. Lưu x5 = 0x14
+addi x0, x0, -1   // pc=0x14: BẪY 
+addi x0, x0, -1   // pc=0x18: BẪY 
+
+// 4. Đích đến cuối cùng
+addi x6, x0, 99   // pc=0x1c: Lệnh ĐƯỢC THỰC THI (x6 = 0x63)
+```
+**Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
+
+<p align="center">
+  <img src="Image/jal_jalr_waveform.png" width="1000" alt="Waveform test lệnh JAL và JALR">
+</p>
+<p align="center">
+  <em>Lệnh JAL và JALR </em>
+</p>
+
+**Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
+
