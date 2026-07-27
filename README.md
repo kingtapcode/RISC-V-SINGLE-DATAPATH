@@ -15,7 +15,8 @@ Kiến trúc cốt lõi được chia thành 5 giai đoạn (stages) xử lý li
 <p align="center">
   <em>Hình 1: Sơ đồ nguyên lý Datapath kiến trúc RV64I Single-Cycle</em>
 </p>
-## 2. Kịch bản Kiểm thử (Testbenches & Verification)
+
+## 2. Kiểm Thử (Testbench and Verfication)
 
 Quá trình kiểm tra tính đúng đắn của Datapath được thực hiện bằng cách nạp mã máy (machine code) biên dịch từ tập lệnh Assembly vào bộ nhớ `IMEM`, sau đó quan sát sự biến đổi của các tín hiệu điều khiển và luồng dữ liệu trên đồ thị sóng (Waveform).
 
