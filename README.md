@@ -201,3 +201,30 @@ addi x6, x0, 99   // pc=0x1c: Lệnh ĐƯỢC THỰC THI (x6 = 0x63)
   Lệnh JALR sử dụng địa chỉ nền `rs1_data_o = 0x14` cộng với độ lệch `imm_o = 0x8` để tạo ra địa chỉ đích 0x1c tại ngõ ra ALU. Khối điều khiển nhận diện đúng tập lệnh và xuất mã `pc_sel_o = 2` để định tuyến tín hiệu này về PC. Tương tự JAL, cờ `reg_write_en_i` tiếp tục nảy lên 1 để chốt địa chỉ quay về `rd_data_i = 0x14 (PC + 4)` vào thanh ghi `x5`. Ở cạnh xung nhịp kế, `pc_o` vọt thẳng tới `0x1c`.
 * **Điểm đến cuối cùng**:
   Lõi thực thi thành công lệnh ADDI cuối cùng, vượt qua toàn bộ các lệnh bẫy được giăng sẵn. Giá trị 0x63 (99 thập phân) được tính toán và chốt an toàn về thanh ghi.
+### 2.5. Test Lệnh U-Type (LUI)
+
+**Mục tiêu:** Kiểm tra khả năng xử lý số tức thời lớn (Upper Immediate) của lệnh `LUI` (Load Upper Immediate). 
+* Đảm bảo khối `ImmGen` dịch trái chính xác 12 bit và ghép nối thành số 32-bit (hoặc 64-bit tùy kiến trúc).
+* Kiểm tra khối ALU thực hiện đúng lệnh truyền thẳng dữ liệu (`pass_b_result`) từ ngõ B ra kết quả mà không qua tính toán.
+
+**Các tín hiệu trọng tâm cần quan sát:**
+* **`imm_o`:** Phải hiển thị giá trị tức thời đã được dịch trái 12 bit (đuôi luôn là 3 số `0` ở hệ Hex).
+* **`alu_result_o`:** Phải bằng chính giá trị của `imm_o`.
+* **`rd_data_i` & `reg_write_en_i`:** Đảm bảo kết quả truyền thẳng từ ALU được ghi ngược về thanh ghi đích an toàn.
+
+**Đoạn mã Assembly được nạp:**
+```assembly
+// Test lệnh LUI (Load Upper Immediate)
+lui x1, 0x12345      // pc=0x0: Khối ImmGen dịch trái 12 bit -> 0x12345000. 
+                     // ALU chạy pass_b_result, đẩy thẳng giá trị này vào x1.
+                     
+lui x2, 0xabcde      // pc=0x4: Khối ImmGen tạo ra 0xabcde000. 
+                     // Chốt giá trị 0xabcde000 vào thanh ghi x2.
+```
+<p align="center">
+  <img src="Image/U_format_waveform.png" width="1000" alt="Waveform test lệnh LUI">
+</p>
+<p align="center">
+  <em>Lệnh LUI </em>
+</p>
+
