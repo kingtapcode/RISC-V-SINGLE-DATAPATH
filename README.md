@@ -137,7 +137,7 @@ addi x5, x0, 99      // pc=0x18: Lệnh này ĐƯỢC THỰC THI (x5 = 99)
 **Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
 
 <p align="center">
-  <img src="Image/beq_waveform.png" width="1000" alt="Waveform test lệnh Load/Store">
+  <img src="Image/beq_waveform.png" width="1000" alt="Waveform test lệnh Branch">
 </p>
 <p align="center">
   <em>Lệnh branch if equal </em>
