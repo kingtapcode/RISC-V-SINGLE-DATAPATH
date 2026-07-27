@@ -273,7 +273,7 @@ srai x4, x1, 1    // pc=0xc : Đẩy bit sang phải, giữ nguyên bit dấu MS
 *   **`mem_write_en` / `io_write_en`:** Cờ cho phép ghi dữ liệu, phải nảy lên `1` khi ghi ra LED.
 *   **`rs2_data_o`:** Chứa dữ liệu cần ghi từ thanh ghi ra LED.
 
-**Kịch bản kiểm thử (Assembly):**
+**Đoạn mã assembly được nạp:**
 ```assembly
 // Bước 1: Nạp địa chỉ Switch và đọc trạng thái
 lui x1, 0x10010       // x1 = 0x1001_0000
