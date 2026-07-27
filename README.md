@@ -106,3 +106,54 @@ lb   x6, 24(x1)           // Đọc 8-bit (0xFF). Do bit MSB = 1, Load Byte sẽ
 * **Test Truy cập 8-bit & Tính năng Sign-Extension (`pc_o = 0x20` và `0x24`):**
   * **`pc_o = 0x20` (Lệnh `SB`):** Lệnh ghi Byte tại địa chỉ `0x28`. Mặt nạ thu hẹp chỉ còn 1 byte thấp nhất: `byte_mask_o = 0x1`. Khối LSU đã cắt trích xuất lấy đúng 8 bit cuối của `0x7ff`, tức là `0xff` để đẩy vào bộ nhớ.
   * **`pc_o = 0x24` (Lệnh `LB`):** Đây là chu kỳ chứng minh mạch Datapath hoàn thiện. Lõi đọc lên dữ liệu thô `rdata_raw_i = 0xff`. Dựa vào `funct3 = 0` (Byte) và nhận diện được bit MSB của `0xff` là `1` (bit dấu âm), khối LSU ngay lập tức kích hoạt tính năng **Sign-Extension** (Mở rộng dấu). Nó lấp đầy phần tử cao bằng bit `1`, đẩy về thanh ghi kết quả `rd_data_i = 0xffffffffffffffff`.
+
+### 2.3. Test Lệnh Rẽ Nhánh Có Điều Kiện (BEQ)
+
+**Mục tiêu:** Kiểm tra hoạt động của khối so sánh nhánh và khả năng cập nhật Bộ đếm chương trình (`PC`) đối với lệnh `BEQ` (Branch if Equal). Đảm bảo Datapath xử lý chuẩn xác 2 trường hợp:
+1. **Branch Taken:** Điều kiện bằng nhau thỏa mãn, PC nhảy tới địa chỉ đích (`PC + imm`).
+2. **Branch Not Taken:** Điều kiện không thỏa mãn, PC bỏ qua phép nhảy và đi tiếp (`PC + 4`).
+
+**Các tín hiệu trọng tâm cần quan sát:**
+* **`pc_o`:** Quan sát bước nhảy của con trỏ lệnh.
+* **`rs1_data_o` & `rs2_data_o`:** Hai toán hạng mang vào so sánh.
+* **`pc_sel_o`:** Cờ điều khiển bộ ghép kênh chọn nguồn PC (Bằng `1` khi nhảy, bằng `0` khi đi tiếp).
+
+**Đoạn mã Assembly được nạp:**
+```assembly
+// Nạp dữ liệu test
+addi x1, x0, 10      // pc=0x0 : x1 = 10
+addi x2, x0, 10      // pc=0x4 : x2 = 10
+addi x3, x0, 20      // pc=0x8 : x3 = 20
+
+// 1. Test BEQ Taken (Điều kiện ĐÚNG -> Phải nhảy)
+beq  x1, x2, 8       // pc=0xc : Vì x1 == x2 (10 == 10) -> Nhảy tới pc = 0xc + 8 = 0x14
+addi x4, x0, -1      // pc=0x10: Lệnh này BỊ BỎ QUA (x4 giữ nguyên = 0)
+
+// 2. Test BEQ Not Taken (Điều kiện SAI -> Không nhảy)
+beq  x1, x3, 8       // pc=0x14: Vì x1 == x3 là SAI (10 != 20) -> Không nhảy, đi tiếp
+addi x5, x0, 99      // pc=0x18: Lệnh này ĐƯỢC THỰC THI (x5 = 99)
+```
+
+**Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
+
+<p align="center">
+  <img src="Image/beq_waveform.png" width="1000" alt="Waveform test lệnh Load/Store">
+</p>
+<p align="center">
+  <em>Lệnh branch if equal </em>
+</p>
+
+**Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
+
+* **Khởi tạo dữ liệu (`pc_o` từ `0x0` đến `0x8`):** 
+  Lõi nạp thành công các giá trị kiểm thử vào thanh ghi. Trên đồ thị, ta thấy `rs1_data_o` và `rs2_data_o` đã xuất hiện các giá trị `0xa` (10) và `0x14` (20) để chuẩn bị cho quá trình so sánh.
+
+* **Trường hợp Branch Taken (`pc_o = 0xc`):**
+  Lệnh `BEQ` đối chiếu hai toán hạng `rs1_data_o = 0xa` và `rs2_data_o = 0xa`. Khối điều khiển nhận thấy cờ `branch_o = 1` và hai giá trị hoàn toàn trùng khớp nên kích hoạt cờ chọn nhánh **`pc_sel_o = 1`**. Ngay tại cạnh lên xung nhịp tiếp theo, con trỏ lệnh `pc_o` **nhảy cóc thành công từ `0xc` sang `0x14`**, lách qua hoàn toàn lệnh bẫy ở địa chỉ `0x10`.
+
+* **Trường hợp Branch Not Taken (`pc_o = 0x14`):**
+  Lệnh `BEQ` thứ hai tiến hành đối chiếu `rs1_data_o = 0xa` và `rs2_data_o = 0x14`. Vì hai giá trị này khác nhau, điều kiện nhảy không thỏa mãn. Khối điều khiển giữ nguyên cờ **`pc_sel_o = 0`**. Lệnh nhảy bị hủy, CPU đi thẳng xuống `pc_o = 0x18`.
+
+* **Hoàn tất kiểm thử (`pc_o = 0x18`):**
+  CPU thực thi thành công lệnh cộng `ADDI` ngay sau đó, xuất ra kết quả `alu_result_o = 0x63` (99 thập phân) và đồng thời bật cờ `reg_write_en_i = 1` để lưu chính xác giá trị này về Register File.
+
