@@ -50,3 +50,59 @@ add  x3, x1, x2     // Cycle 3: x3 = x1 + x2 = 15
 * **Chu kỳ 1 (`pc_o = 0x0`):** Lệnh `ADDI` đầu tiên được trích xuất. Mã điều khiển ALU chỉ định phép cộng (`alu_ctrl_o = 0x2`). Ngõ ra ALU tính toán thành công giá trị `alu_result_o = 0x5` và truyền thẳng tới dây `rd_data_i = 0x5` để ghi chốt vào thanh ghi `x1`.
 * **Chu kỳ 2 (`pc_o = 0x4`):** Lệnh `ADDI` thứ hai thực thi tương tự chu kỳ trước. Giá trị tức thời `0xa` (tương đương 10) đi qua ALU, cho ra kết quả `alu_result_o = 0xa` và tiếp tục được định tuyến về `rd_data_i = 0xa` để cập nhật cho thanh ghi `x2`.
 * **Chu kỳ 3 (`pc_o = 0x8`):** Lệnh `ADD` chính thức được kích hoạt. Các dây dữ liệu nguồn xuất chính xác giá trị đã lưu ở 2 chu kỳ trước: `rs1_data_o = 0x5` và `rs2_data_o = 0xa`. Dưới tín hiệu điều khiển `alu_ctrl_o = 0x2`, khối ALU thực hiện cộng hai toán hạng, trả về kết quả chính xác `alu_result_o = 0xf` (tức 15). Giá trị này thành công đi vào `rd_data_i` để ghi ngược về thanh ghi đích `x3`.
+
+### 2.2. Test Truy Cập Bộ Nhớ Đa Kích Thước (Load / Store)
+
+**Mục tiêu:** Kiểm tra khả năng ghi/đọc dữ liệu từ `Dmem` thông qua khối Load/Store Unit (`LSU`). Đặc biệt xác minh khả năng cắt bit (masking) khi Store và mở rộng dấu (sign-extension) khi Load đối với các kích thước dữ liệu: Double-word (64-bit), Word (32-bit), Half-word (16-bit) và Byte (8-bit).
+
+**Đoạn mã Assembly được nạp (Kiểm tra cắt bit và mở rộng dấu):**
+```assembly
+// Nạp địa chỉ nền và dữ liệu test
+addi x1, x0, 16           // x1 = 0x10 (Địa chỉ nền)
+addi x2, x0, 2047         // x2 = 0x7FF (Nhị phân: 0000...0111 1111 1111)
+
+// 1. Test Double-word (64-bit)
+sd   x2, 0(x1)            // Ghi 0x7FF vào Dmem[0x10]
+ld   x3, 0(x1)            // Đọc lại vào x3 (Kết quả: 0x7FF)
+
+// 2. Test Word (32-bit)
+sw   x2, 8(x1)            // Ghi 32-bit dưới vào Dmem[0x18]
+lw   x4, 8(x1)            // Đọc 32-bit, mở rộng dấu vào x4 (Kết quả: 0x7FF)
+
+// 3. Test Half-word (16-bit)
+sh   x2, 16(x1)           // Ghi 16-bit dưới (0x07FF) vào Dmem[0x20]
+lh   x5, 16(x1)           // Đọc 16-bit, mở rộng dấu vào x5 (Kết quả: 0x7FF)
+
+// 4. Test Byte (8-bit) - Trường hợp đặc biệt để kiểm tra Sign-Extension
+sb   x2, 24(x1)           // Cắt lấy 8-bit thấp nhất (0xFF) ghi vào Dmem[0x28]
+lb   x6, 24(x1)           // Đọc 8-bit (0xFF). Do bit MSB = 1, Load Byte sẽ mở rộng dấu
+                          // Kết quả x6 bắt buộc phải là: 0xFFFFFFFFFFFFFFFF
+```
+
+**Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
+
+<p align="center">
+  <img src="images/load_store_waveform.png" width="1000" alt="Waveform test lệnh Load/Store">
+</p>
+<p align="center">
+  <em>Hình 3: Quá trình xử lý mặt nạ bit và mở rộng dấu của khối LSU qua các lệnh Load/Store</em>
+</p>
+
+* **Chu kỳ Khởi tạo (`pc_o = 0x0` và `0x4`):**
+  Hai lệnh `ADDI` đầu tiên được thực thi trơn tru để nạp giá trị ban đầu. Thanh ghi `x1` nhận địa chỉ nền `0x10`, thanh ghi `x2` nhận dữ liệu mẫu `0x7ff` để chuẩn bị cho các bài test.
+
+* **Test Truy cập 64-bit (`pc_o = 0x8` và `0xc`):**
+  * **`pc_o = 0x8` (Lệnh `SD`):** ALU cộng `rs1` và `imm` ra địa chỉ RAM `alu_result_o = 0x10`. Dựa vào `funct3=3` nên khối LSU sinh mặt nạ `byte_mask_o = 0xff` (bật 8 byte) và bật cờ `mem_write_en_o = 1`. Toàn bộ dữ liệu `0x7ff` được ghi vào Dmem.
+  * **`pc_o = 0xc` (Lệnh `LD`):** Đọc lại dữ liệu từ địa chỉ `0x10` để lấy dữ liệu `0x7ff` đã lưu ra. Cờ `MemtoReg_o = 1` định tuyến dữ liệu từ Dmem về thanh ghi. Kết quả `rd_data_i = 0x7ff` và tại địa chỉ `rd_addr_i[4:0]=3` tức là thanh ghi 3.
+
+* **Test Truy cập 32-bit (`pc_o = 0x10` và `0x14`):**
+  * **`pc_o = 0x10` (Lệnh `SW`):** Địa chỉ ghi là `0x18`. Dựa vào `funct3 = 2`, mặt nạ chỉ bật 4 byte thấp: `byte_mask_o = 0xFF`. Dữ liệu gốc 64 bit `0x00000000000007ff` chỉ được lưu 32 bit thấp nhất là `0x000007FF` và số 0 không được hiển thị trên waveform
+  * **`pc_o = 0x14` (Lệnh `LW`):** Đọc từ địa chỉ `0x18`. Mặc dù là lệnh đọc Word (32-bit), do dữ liệu `0x7ff` là số dương, LSU tự động thực hiện Zero-Extension (mở rộng 0), trả về `rd_data_i = 0x7ff` chuẩn xác.
+
+* **Test Truy cập 16-bit (`pc_o = 0x18` và `0x1c`):**
+  * **`pc_o = 0x18` (Lệnh `SH`):** Địa chỉ ghi tiến lên `0x20`. Dựa vào `funct3=1` Khối LSU sinh mặt nạ bật 2 byte thấp: `byte_mask_o = 0x3`. Dữ liệu gốc 64 bit `0x00000000000007FF` chỉ lưu được 16 bit thấp nhất là `0x07FF`
+  * **`pc_o = 0x1c` (Lệnh `LH`):** Đọc thành công từ `0x20` và trả về `rd_data_i = 0x7ff` (số 0 ở trước được lược bỏ).
+
+* **Test Truy cập 8-bit & Tính năng Sign-Extension (`pc_o = 0x20` và `0x24`):**
+  * **`pc_o = 0x20` (Lệnh `SB`):** Lệnh ghi Byte tại địa chỉ `0x28`. Mặt nạ thu hẹp chỉ còn 1 byte thấp nhất: `byte_mask_o = 0x1`. Khối LSU đã cắt trích xuất lấy đúng 8 bit cuối của `0x7ff`, tức là `0xff` để đẩy vào bộ nhớ.
+  * **`pc_o = 0x24` (Lệnh `LB`):** Đây là chu kỳ chứng minh mạch Datapath hoàn thiện. Lõi đọc lên dữ liệu thô `rdata_raw_i = 0xff`. Dựa vào `funct3 = 0` (Byte) và nhận diện được bit MSB của `0xff` là `1` (bit dấu âm), khối LSU ngay lập tức kích hoạt tính năng **Sign-Extension** (Mở rộng dấu). Nó lấp đầy phần tử cao bằng bit `1`, đẩy về thanh ghi kết quả `rd_data_i = 0xffffffffffffffff`.
