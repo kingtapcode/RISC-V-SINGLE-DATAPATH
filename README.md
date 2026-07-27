@@ -24,16 +24,23 @@ Quá trình kiểm tra tính đúng đắn của Datapath được thực hiện
 addi x1, x0, 5      // Cycle 1: x1 = 0 + 5 = 5
 addi x2, x0, 10     // Cycle 2: x2 = 0 + 10 = 10
 add  x3, x1, x2     // Cycle 3: x3 = x1 + x2 = 15
+**Các tín hiệu trọng tâm cần quan sát:**
+* **`clk_i` & `pc_o`:** Xung nhịp hệ thống và Bộ đếm chương trình.
+* **`instr_o`:** Mã lệnh đang được thực thi.
+* **`rs1_data_o` & `rs2_data_o`:** Dữ liệu trích xuất từ 2 thanh ghi nguồn.
+* **`alu_ctrl_o`:** Mã điều khiển khối tính toán ALU.
+* **`alu_result_o`:** Kết quả trả về từ phép toán.
+* **`rd_data_i`:** Luồng dữ liệu cuối cùng chốt về thanh ghi đích (Write-back).
+
 **Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
 
 <p align="center">
-  <img src="Image/add_waveform.png" width="1000" alt="Waveform test lệnh ADD">
+  <img src="Images/add_waveform.png" width="1000" alt="Waveform test lệnh ADD">
 </p>
 <p align="center">
-  <em>Hình 2: Trạng thái các tín hiệu nội bộ khi CPU thực thi chuỗi lệnh ADD/ADDI (Hệ cơ số 16)</em>
+  <em>Hình 2: Trạng thái các tín hiệu nội bộ khi CPU thực thi chuỗi lệnh ADD (Hệ cơ số 16)</em>
 </p>
 
-* **Chu kỳ 1 (`pc_o = 0x0`):** Lệnh `ADDI` đầu tiên được thực thi. `rs1_addr_i = 0x0` (thanh ghi `x0`), khối `ImmGen` tạo ra giá trị tức thời `imm_o = 0x5`. ALU tính ra `alu_result_o = 0x5` và ghi thành công vào `rd_data_i = 0x5` (tại thanh ghi đích `x1` có địa chỉ `rd_addr_i = 0x1`).
-* **Chu kỳ 2 (`pc_o = 0x4`):** Lệnh `ADDI` thứ hai hoạt động tương tự. Khối `ImmGen` tạo ra giá trị tức thời `0xa` (tức là 10). Ngõ ra của ALU đạt `0xa` và được chốt về thanh ghi đích `x2` (`rd_addr_i = 0x2`, `rd_data_i = 0xa`).
-* **Chu kỳ 3 (`pc_o = 0x8`):** Lệnh `ADD` được kích hoạt. Lõi xuất chính xác địa chỉ của 2 thanh ghi nguồn (`rs1_addr_i = 0x1`, `rs2_addr_i = 0x2`), kéo theo dữ liệu `0x5` và `0xa` vào ngõ vào ALU. Ngõ ra `alu_result_o` cộng chính xác ra `0xf` (tức là 15) và chốt về `rd_data_i` để lưu vào thanh ghi `x3` (`rd_addr_i = 0x3`).
-
+* **Chu kỳ 1 (`pc_o = 0x0`):** Lệnh `ADDI` đầu tiên được trích xuất. Mã điều khiển ALU chỉ định phép cộng (`alu_ctrl_o = 0x2`). Ngõ ra ALU tính toán thành công giá trị `alu_result_o = 0x5` và truyền thẳng tới dây `rd_data_i = 0x5` để ghi chốt vào thanh ghi `x1`.
+* **Chu kỳ 2 (`pc_o = 0x4`):** Lệnh `ADDI` thứ hai thực thi tương tự chu kỳ trước. Giá trị tức thời `0xa` (tương đương 10) đi qua ALU, cho ra kết quả `alu_result_o = 0xa` và tiếp tục được định tuyến về `rd_data_i = 0xa` để cập nhật cho thanh ghi `x2`.
+* **Chu kỳ 3 (`pc_o = 0x8`):** Lệnh `ADD` chính thức được kích hoạt. Các dây dữ liệu nguồn xuất chính xác giá trị đã lưu ở 2 chu kỳ trước: `rs1_data_o = 0x5` và `rs2_data_o = 0xa`. Dưới tín hiệu điều khiển `alu_ctrl_o = 0x2`, khối ALU thực hiện cộng hai toán hạng, trả về kết quả chính xác `alu_result_o = 0xf` (tức 15). Giá trị này thành công đi vào `rd_data_i` để ghi ngược về thanh ghi đích `x3`.
