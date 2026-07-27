@@ -227,6 +227,7 @@ lui x2, 0xabcde      // pc=0x4: Khối ImmGen tạo ra 0xabcde000.
 <p align="center">
   <em>Lệnh LUI </em>
 </p>
+
 ### 2.6. Test Nhóm Lệnh Dịch Bit (SLLI, SRLI, SRAI)
 
 **Mục tiêu:** Kiểm tra khả năng xử lý của ALU đối với các lệnh dịch bit tức thời. Đảm bảo ALU phân biệt được sự khác nhau giữa dịch phải logic (chèn `0` vào bit cao nhất) và dịch phải số học (giữ nguyên bit dấu).
