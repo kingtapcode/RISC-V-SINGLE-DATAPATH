@@ -18,10 +18,20 @@ add_sub_64bit addsub_inst(
 assign and_result = a_i & b_i;
 assign or_result = a_i | b_i;
 assign xor_result = a_i ^ b_i;
-assign shift_result = (alu_ctrl_i == 4'b0101) ? (a_i << b_i[5:0]) :         // sll
-                      (alu_ctrl_i == 4'b0011) ? (a_i >> b_i[5:0]) :         // srl
-                      (alu_ctrl_i == 4'b0111) ? ($signed(a_i) >>> b_i[5:0]) : // sra
-                      64'b0; // default case
+always_comb begin
+    if (alu_ctrl_i == 4'b0101) begin
+        shift_result = a_i << b_i[5:0];           // SLLI
+    end 
+    else if (alu_ctrl_i == 4'b0011) begin
+        shift_result = a_i >> b_i[5:0];           // SRLI
+    end 
+    else if (alu_ctrl_i == 4'b0111) begin
+        shift_result = $signed(a_i) >>> b_i[5:0]; // SRAI (Ép kiểu có dấu an toàn tuyệt đối)
+    end 
+    else begin
+        shift_result = 64'b0;
+    end
+end
 assign pass_b_result = b_i;
 logic sign_a, sign_b, sign_sum, is_sub;
 assign sign_a = a_i[63];
