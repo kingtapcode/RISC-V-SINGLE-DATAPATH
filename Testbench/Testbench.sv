@@ -3,9 +3,9 @@ module tb_RISCV_core();
     // 1. Khai báo các tín hiệu kết nối với lõi CPU (DUT)
     logic clk_i;
     logic rst_ni;
-    logic [63:0] switch_i;
-    logic [63:0] red_led_o;
-    logic [63:0] green_led_o;
+    logic [31:0] switch_i;
+    logic [31:0] red_led_o;
+    logic [31:0] green_led_o;
     // 2. Gọi (Instantiate) module RISCV_core đã thiết kế
     RISCV_core dut (
         .clk_i(clk_i),
