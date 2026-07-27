@@ -35,7 +35,7 @@ add  x3, x1, x2     // Cycle 3: x3 = x1 + x2 = 15
 **Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
 
 <p align="center">
-  <img src="Images/add_waveform.png" width="1000" alt="Waveform test lệnh ADD">
+  <img src="Image/add_waveform.png" width="1000" alt="Waveform test lệnh ADD">
 </p>
 <p align="center">
   <em>Hình 2: Trạng thái các tín hiệu nội bộ khi CPU thực thi chuỗi lệnh ADD (Hệ cơ số 16)</em>
