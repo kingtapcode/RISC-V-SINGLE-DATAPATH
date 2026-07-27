@@ -18,11 +18,22 @@ Kiến trúc cốt lõi được chia thành 5 giai đoạn (stages) xử lý li
 ## 2. Kịch bản Kiểm thử (Testbenches & Verification)
 Quá trình kiểm tra tính đúng đắn của Datapath được thực hiện bằng cách nạp mã máy (machine code) biên dịch từ tập lệnh Assembly vào bộ nhớ `IMEM`, sau đó quan sát sự biến đổi của các tín hiệu điều khiển và luồng dữ liệu trên đồ thị sóng (Waveform).
 ### 2.1. Test Lệnh Số Học (ADD / SUB)
-**Mục tiêu:** Xác minh luồng dữ liệu đi từ tập thanh ghi (`RegFile`), xuyên qua khối tính toán (`ALU_64bit`) và ghi ngược kết quả chính xác về lại thanh ghi đích.
-**Đoạn mã Assembly:**
+**Mục tiêu:** Xác minh luồng dữ liệu đi từ tập thanh ghi (`RegFile`) và khối `ImmGen32_64`, xuyên qua khối tính toán (`ALU_64bit`) và ghi ngược kết quả chính xác về lại thanh ghi đích.
+**Đoạn mã Assembly được nạp (Minh họa phép tính 5 + 10 = 15):**
 ```assembly
-// Kiểm tra khả năng nạp hằng số và cộng hai thanh ghi
-addi x1, x0, 5      // x1 = 0 + 5 = 5
-addi x2, x0, 10     // x2 = 0 + 10 = 10 (0xA)
-add  x3, x1, x2     // x3 = x1 + x2 = 15 (0xF)
+addi x1, x0, 5      // Cycle 1: x1 = 0 + 5 = 5
+addi x2, x0, 10     // Cycle 2: x2 = 0 + 10 = 10
+add  x3, x1, x2     // Cycle 3: x3 = x1 + x2 = 15
+**Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
+
+<p align="center">
+  <img src="Image/add_waveform.png" width="1000" alt="Waveform test lệnh ADD">
+</p>
+<p align="center">
+  <em>Hình 2: Trạng thái các tín hiệu nội bộ khi CPU thực thi chuỗi lệnh ADD/ADDI (Hệ cơ số 16)</em>
+</p>
+
+* **Chu kỳ 1 (`pc_o = 0x0`):** Lệnh `ADDI` đầu tiên được thực thi. `rs1_addr_i = 0x0` (thanh ghi `x0`), khối `ImmGen` tạo ra giá trị tức thời `imm_o = 0x5`. ALU tính ra `alu_result_o = 0x5` và ghi thành công vào `rd_data_i = 0x5` (tại thanh ghi đích `x1` có địa chỉ `rd_addr_i = 0x1`).
+* **Chu kỳ 2 (`pc_o = 0x4`):** Lệnh `ADDI` thứ hai hoạt động tương tự. Khối `ImmGen` tạo ra giá trị tức thời `0xa` (tức là 10). Ngõ ra của ALU đạt `0xa` và được chốt về thanh ghi đích `x2` (`rd_addr_i = 0x2`, `rd_data_i = 0xa`).
+* **Chu kỳ 3 (`pc_o = 0x8`):** Lệnh `ADD` được kích hoạt. Lõi xuất chính xác địa chỉ của 2 thanh ghi nguồn (`rs1_addr_i = 0x1`, `rs2_addr_i = 0x2`), kéo theo dữ liệu `0x5` và `0xa` vào ngõ vào ALU. Ngõ ra `alu_result_o` cộng chính xác ra `0xf` (tức là 15) và chốt về `rd_data_i` để lưu vào thanh ghi `x3` (`rd_addr_i = 0x3`).
 
