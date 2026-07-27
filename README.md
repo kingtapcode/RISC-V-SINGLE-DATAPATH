@@ -227,4 +227,37 @@ lui x2, 0xabcde      // pc=0x4: Khối ImmGen tạo ra 0xabcde000.
 <p align="center">
   <em>Lệnh LUI </em>
 </p>
+### 2.6. Test Nhóm Lệnh Dịch Bit (SLLI, SRLI, SRAI)
+
+**Mục tiêu:** Kiểm tra khả năng xử lý của ALU đối với các lệnh dịch bit tức thời. Đảm bảo ALU phân biệt được sự khác nhau giữa dịch phải logic (chèn `0` vào bit cao nhất) và dịch phải số học (giữ nguyên bit dấu).
+
+**Các tín hiệu trọng tâm cần quan sát:**
+* **`rs1_data_o`:** Toán hạng gốc mang đi dịch.
+* **`imm_o`:** Chứa số lượng bit cần dịch (shamt).
+* **`alu_result_o`:** Kết quả sau khi dịch.
+* **`rd_data_i`:** Xác nhận kết quả dịch được ghi an toàn về Register File.
+
+**Đoạn mã Assembly được nạp:**
+```assembly
+// Khởi tạo dữ liệu kiểm thử (Sử dụng số âm để test MSB)
+addi x1, x0, -8   // pc=0x0 : x1 = -8 (Biểu diễn 64-bit: 0xFFFFFFFFFFFFFFF8)
+
+// 1. Test SLLI (Dịch trái logic 1 bit)
+slli x2, x1, 1    // pc=0x4 : Đẩy bit sang trái, chèn 0 vào bên phải. 
+                  // Kết quả: x2 = 0xFFFFFFFFFFFFFFF0 (-16)
+
+// 2. Test SRLI (Dịch phải logic 1 bit)
+srli x3, x1, 1    // pc=0x8 : Đẩy bit sang phải, chèn 0 vào bit MSB.
+                  // Kết quả: x3 = 0x7FFFFFFFFFFFFFFC (Mất dấu âm, thành số dương khổng lồ)
+
+// 3. Test SRAI (Dịch phải số học 1 bit)
+srai x4, x1, 1    // pc=0xc : Đẩy bit sang phải, giữ nguyên bit dấu MSB = 1.
+                  // Kết quả: x4 = 0xFFFFFFFFFFFFFFFC (-4)
+```
+<p align="center">
+  <img src="Image/Shiftbit_waveform.png" width="1000" alt="Waveform test lệnh dịch bit">
+</p>
+<p align="center">
+  <em>Lệnh Dịch Bit </em>
+</p>
 
