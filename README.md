@@ -262,3 +262,37 @@ srai x4, x1, 1    // pc=0xc : Đẩy bit sang phải, giữ nguyên bit dấu MS
   <em>Lệnh Dịch Bit </em>
 </p>
 
+### 2.7. Test Giao Tiếp Ngoại Vi (Memory-Mapped I/O)
+
+**Mục tiêu:** Kiểm tra khả năng giao tiếp của CPU với các thiết bị phần cứng bên ngoài thông qua kỹ thuật ánh xạ bộ nhớ (MMIO). Xác nhận khối `Address_Decoder` (Bộ giải mã địa chỉ) định tuyến thành công luồng dữ liệu giữa CPU, Bộ nhớ RAM và các ngoại vi (Switch, LED).
+
+**Các tín hiệu trọng tâm cần quan sát:**
+*   **`io_sw_i` (Switch Input):** Trạng thái mô phỏng của các nút gạt từ bên ngoài.
+*   **`io_led_o` (LED Output):** Tín hiệu xuất ra để bật/tắt dàn đèn LED.
+*   **`alu_result_o`:** Chứa địa chỉ ngoại vi đang được truy xuất (do ALU tính toán).
+*   **`mem_write_en` / `io_write_en`:** Cờ cho phép ghi dữ liệu, phải nảy lên `1` khi ghi ra LED.
+*   **`rs2_data_o`:** Chứa dữ liệu cần ghi từ thanh ghi ra LED.
+
+**Kịch bản kiểm thử (Assembly):**
+```assembly
+// Bước 1: Nạp địa chỉ Switch và đọc trạng thái
+lui x1, 0x10010       // x1 = 0x1001_0000
+lw  x2, 0(x1)         // Đọc Switch, lưu vào x2
+
+// Bước 2: Nạp địa chỉ Red LED và xuất tín hiệu
+lui x3, 0x10000       // x3 = 0x1000_0000
+sw  x2, 0(x3)         // Ghi dữ liệu từ x2 ra Red LED
+
+// Bước 3: Nạp địa chỉ Green LED và xuất tín hiệu
+lui x4, 0x10001       // x4 = 0x1000_1000
+sw  x2, 0(x4)         // Ghi dữ liệu từ x2 ra Green LED
+```
+
+<p align="center">
+  <img src="Image/Ngoaivi_waveform.png" width="1000" alt="Waveform test LED, SWITCH">
+</p>
+<p align="center">
+  <em>LED, SWITCH </em>
+</p>
+
+
