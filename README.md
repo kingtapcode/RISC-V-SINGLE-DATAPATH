@@ -193,3 +193,11 @@ addi x6, x0, 99   // pc=0x1c: Lệnh ĐƯỢC THỰC THI (x6 = 0x63)
 
 **Phân tích kết quả trên Waveform (Định dạng Hexadecimal):**
 
+* **Thực thi lệnh JAL (pc_o = 0x0)**:
+  Lệnh JAL được giải mã thành công. Khối điều khiển bật cờ định tuyến `pc_sel_o = 2'b01 (1 trong hex)`. Cùng lúc đó, cờ cho phép ghi thanh ghi `reg_write_en_i` được kéo lên 1, chốt chính xác địa chỉ quay về `rd_data_i = 0x4 (PC + 4)` vào thanh ghi x1. Ở cạnh xung nhịp tiếp theo,`pc_o` nhảy cóc an toàn từ `0x0` sang đích đến `0xc`. Vì đã trỏ tới địa chỉ `0xc` nên 2 dòng lệnh tiếp theo bị nhảy qua do địa chỉ không trùng với địa chỉ của `pc_o` hiện tại.
+* **Chuẩn bị địa chỉ nền (`pc_o = 0xc`):
+  Lệnh ADDI thực hiện cộng giá trị `0x4` (vừa được JAL lưu lại) với `0x10` (16 thập phân), xuất ra kết quả `alu_result_o = 0x14`. Giá trị này được ghi vào thanh ghi x4 để làm địa chỉ nền cho lệnh nhảy tiếp theo.
+* **Thực thi lệnh JALR**:
+  Lệnh JALR sử dụng địa chỉ nền `rs1_data_o = 0x14` cộng với độ lệch `imm_o = 0x8` để tạo ra địa chỉ đích 0x1c tại ngõ ra ALU. Khối điều khiển nhận diện đúng tập lệnh và xuất mã `pc_sel_o = 2` để định tuyến tín hiệu này về PC. Tương tự JAL, cờ `reg_write_en_i` tiếp tục nảy lên 1 để chốt địa chỉ quay về `rd_data_i = 0x14 (PC + 4)` vào thanh ghi `x5`. Ở cạnh xung nhịp kế, `pc_o` vọt thẳng tới `0x1c`.
+* **Điểm đến cuối cùng**:
+  Lõi thực thi thành công lệnh ADDI cuối cùng, vượt qua toàn bộ các lệnh bẫy được giăng sẵn. Giá trị 0x63 (99 thập phân) được tính toán và chốt an toàn về thanh ghi.
